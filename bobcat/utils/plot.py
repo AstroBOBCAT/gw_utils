@@ -8,10 +8,11 @@ from matplotlib import gridspec
 from matplotlib import colors
 from matplotlib import patheffects
 from matplotlib import text
-%matplotlib inline
-%config InlineBackend.figure_format = 'retina'
 
-from pylab import cm
+# These lines needed for python notebooks
+#%matplotlib inline
+#%config InlineBackend.figure_format = 'retina'
+
 import astropy.units as u
 import astropy.constants as const
 from astropy.coordinates import SkyCoord
@@ -23,7 +24,7 @@ os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 _install_dir = os.path.abspath(os.path.dirname(__file__))
 
 
-JESSICA we need to add the upper limit h vs f plots here... this seems to only be skymap plots?
+#JESSICA we need to add the upper limit h vs f plots here... this seems to only be skymap plots?
 
 
 ######!!!!! SARAH THINKS THIS FUNCTION NEEDS TO BE NOT PART OF THIS CODE.
@@ -283,3 +284,5 @@ def skymap_generator(ul_file, nside):
     return
 
 #this should return a completed plot
+
+
