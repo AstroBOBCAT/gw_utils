@@ -1,17 +1,98 @@
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astroquery.ipac.ned import Ned
-from .coordinate_finder import coord_finder
-from .coordinate_converter import coord_converter
-from .NED_name import NED_name
-from astropy import units as u
-from astropy.coordinates import SkyCoord
-from .coordinate_finder import coord_finder
-from .coordinate_converter import coord_converter
-from .NED_name import NED_name
-from astropy import units as u
-from astropy.coordinates import SkyCoord
-from astroquery.ipac.ned import Ned #needed to connect to the NED database
+import numpy as np
+
+
+'''.
+
+Wrappers that call the NASA Extragalactic Database.
+
+'''
+
+
+def coord_converter(ra, dec): 
+    '''.
+
+    Convert J2000 ra and dec with units of hmsdms into J2000 ra
+    and dec with units of degrees. 
+
+    Inputs:
+        ra = J2000 right ascension, units = hms
+        dec = J2000 declination, units = dms 
+
+    Outputs:
+        ra = J2000 right ascension, units = degrees
+        dec = J2000 declination, units = degrees
+
+    '''
+
+    # Make sure the ra and dec passed to the function are strings,
+    # i.e. they're most likely in hmsdms units.  If not raise an
+    # error.
+    if not isinstance(ra, str) or not isinstance(dec, str):
+        raise TypeError("ra and dec must be strings.")
+    
+    # Try to convert the coordinates into decimal degrees.
+    try:
+        # Convert the coordinates into degrees.
+        coords_arr = SkyCoord(ra, dec)
+
+        # Split the ra and dec and return them.
+        ra_deg, dec_deg = np.array([coords_arr.ra.degree, coords_arr.dec.degree]) 
+        return ra_deg, dec_deg
+    # If something goes wrong in the above code block it is most
+    # likely because the ra and dec passed to the function weren't
+    # entered exactly correctly. Therefore, raise an error.
+    except:
+        raise SystemError("Make sure ra and dec are entered correctly.")
+
+
+
+def coord_finder(name):
+    '''.
+    
+    Use astropy search library to determine J2000 ra and dec of an
+    object. This function will take the name of an astronomical object and
+    query the astropy database with the name. The name used in this
+    function does NOT have to be the NED name of the object. The function
+    will return the J2000 ra and dec of the object in units of hmsdms as
+    long so the object is found within astropy.
+
+    Inputs:
+        name = string of the name of the object the coordinates are needed for
+
+    Outputs:
+        ra = J2000 right ascension, units = hms
+        dec = J2000 declination, units = dms
+
+    '''
+
+    # First we need to check that the name given is actually a string.
+    # If it isn't a string we could change it into a string but it is
+    # probably better to raise an error to make sure the user is aware
+    # of what is wanted for the function.
+    if not isinstance(name, str):
+        raise TypeError("Name must be a string.")
+
+    # Try to find the name in the astropy databases.
+    try:
+        # Search for the coordinates of the object given the name. 
+        coords = SkyCoord.from_name(name, parse = True).to_string('hmsdms').split()
+
+        # Assign the ra and dec variables.
+        ra = coords[0]
+        dec = coords[1]
+
+        # Return an array of the ra and dec.
+        return (ra, dec)
+    
+    # If the name is not in the astropy databases then raise an error.
+    # (There will most likely be another error raised by the query
+    # failing that says the same thing).
+    except:
+        raise SystemError("Name of source is in shorthand or not in an established database.")
+
 
 
 def NED_name(ra, dec, radius_tol = 0.01):
@@ -70,7 +151,6 @@ def NED_name(ra, dec, radius_tol = 0.01):
 
 
 
-###################
 def NED_name_resolver(name):
     '''.
     
@@ -129,15 +209,8 @@ def NED_name_resolver(name):
         raise SystemError("Name given is not in NED database.")
 
 
-######
-# Import the need libraries and modules for the function to work.
-from astropy import units as u
-from astropy.coordinates import SkyCoord
-from astroquery.ipac.ned import Ned #needed to connect to the NED database
-######
 
 
-###############
 def NED_z(ra, dec, radius_tol = 0.01):
     '''.
     
@@ -189,3 +262,5 @@ def NED_z(ra, dec, radius_tol = 0.01):
     # an error.
     else:
         raise RuntimeError("Arguments given are incorrect. Make sure ra and dec are in degrees.")
+
+
