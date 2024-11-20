@@ -95,7 +95,7 @@ def coord_finder(name):
 
 
 
-def NED_name(ra, dec, radius_tol = 0.01):
+def name(ra, dec, radius_tol = 0.01):
     '''.
     
     Use NED search library to determine name of nearest NED-listed
@@ -151,7 +151,7 @@ def NED_name(ra, dec, radius_tol = 0.01):
 
 
 
-def NED_name_resolver(name):
+def name_resolver(name):
     '''.
     
     Take an astronomical object's name and return the associated NED
@@ -198,8 +198,8 @@ def NED_name_resolver(name):
         ra_deg, dec_deg = coord_converter(ra, dec)
 
         # Pull just the object's name out of the table (stripping the extra white spaces).
-        #NED_name = str(result_table['Object Name']).replace('Object Name\n-----------\n', '').strip()
-        res_name = NED_name(ra_deg, dec_deg)
+        #name = str(result_table['Object Name']).replace('Object Name\n-----------\n', '').strip()
+        res_name = name(ra_deg, dec_deg)
 
         # Return the NED name
         return (res_name)
@@ -211,7 +211,7 @@ def NED_name_resolver(name):
 
 
 
-def NED_z(ra, dec, radius_tol = 0.01):
+def redshift(ra, dec, radius_tol = 0.01):
     '''.
     
     Find the redshift associated with an J2000 ra and dec (in degrees)
