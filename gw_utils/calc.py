@@ -264,6 +264,67 @@ def q_calc(m1,m2):
 
 
 
+
+def q_limit(Mc,Mtot):
+    '''.
+
+    Code to save you from ever again having to do the quadratic equation
+    while converting a pair of Mc and Mtot to a mass ratio.
+
+    Go in peace.
+
+    Calculate the mass ratio of a system given two masses.
+    Mass ratio is here defined 0 < q <= 1
+
+    Inputs:
+
+        Mc = chirp mass upper limit derived from search. units are same as the other
+             mass value given
+
+        Mtot = total mass of SMBH binary. units are same as the other
+             mass value given
+    
+    Outputs:
+
+        q = mass ratio of the system, units = N/A
+
+    '''
+
+    term1 = math.sqrt(
+        ((Mtot**4) * ((Mc/Mtot)**(2/3)))
+        -
+        (4* (Mc**2) * (Mtot**2) * (Mc/Mtot)**(1/3))
+    )
+    
+    term2 = 2* (Mc**2)
+
+    term3 = (Mtot**2) * ((Mc/Mtot)**(1/3))
+
+    term4 = 2 * (Mc**2)
+
+    qplus = (term1 - term2 + term3)/term4
+
+    qminus = (-1*term1 - term2 + term3)/term4
+
+    if (Mc/Mtot > 0.435275282):
+        print("\n\t------- ERROR -------\nThe inputs you provided imply a mass ratio of q > 1\n(in other words, Mc is too big compared to Mtot).\n\nRemember q is defined 0 < q < 1. Please check your values and try again.\n\nIf you are inputing the results from a CW upper-limit run, this result implies your results are not constraining on q.\n\t---------------------\n")
+        exit()
+
+    if (qplus>qminus):
+        q = qminus
+        multiplier = qplus
+    else:
+        q = qplus
+        multiplier = qminus
+        
+
+    return q,multiplier
+
+
+
+
+    
+
 # This is the BOBcat SMBHB Candidate Mass Value Calculator. It will
 # read provided inputs of mass quantities and can calculate unknown
 # mass quantities.  Currently, the BOBcat Mass Value Calculator is
