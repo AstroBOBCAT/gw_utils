@@ -1,6 +1,5 @@
 import numpy as np 
 import math
-import numpy as np
 from astropy.coordinates import SkyCoord 
 
 
@@ -158,7 +157,7 @@ def find_m1_m2(m1 = None, m2 = None, Mtot = None, q = None, Mc = None, mu = None
         pass
 
     # Finally return m1 and m2 values.
-    return(m1,m2)
+    return m1, m2
 
 
 
@@ -980,8 +979,8 @@ def coord_converter(ra, dec):
         dec = J2000 declination, units = dms 
 
     Outputs:
-        ra = J2000 right ascension, units = degrees
-        dec = J2000 declination, units = degrees
+        ra = J2000 right ascension, units = degrees, format = standard python float (64bit)
+        dec = J2000 declination, units = degrees, format = standard python float (64bit)
 
     '''
 
@@ -998,7 +997,7 @@ def coord_converter(ra, dec):
 
         # Split the ra and dec and return them.
         ra_deg, dec_deg = np.array([coords_arr.ra.degree, coords_arr.dec.degree]) 
-        return ra_deg, dec_deg
+        return float(ra_deg), float(dec_deg)
     # If something goes wrong in the above code block it is most
     # likely because the ra and dec passed to the function weren't
     # entered exactly correctly. Therefore, raise an error.
@@ -1013,17 +1012,18 @@ def coord_finder(name):
     Use astropy search library to determine J2000 ra and dec of an object.
 
     This function will take the name of an astronomical object and
-    query the astropy database with the name. The name used in this
-    function does NOT have to be the NED name of the object. The
-    function will return the J2000 ra and dec of the object in units
-    of hmsdms as long so the object is found within astropy.
+    query CDS's Sesame name resolver (via astropy) with the name. The
+    name used in this function does NOT have to be the NED name of the
+    object listed in the google sheet. The function will return the
+    J2000 ra and dec of the object in units of hmsdms as long so the
+    object is found within astropy.
 
     Inputs:
         name = string of the name of the object the coordinates are needed for
 
     Outputs:
-        ra = J2000 right ascension, units = hms
-        dec = J2000 declination, units = dms
+        ra = J2000 right ascension, units = hms, format = std python float (64 bit)
+        dec = J2000 declination, units = dms, format = std python float (64 bit)
 
     '''
 
@@ -1044,13 +1044,13 @@ def coord_finder(name):
         dec = coords[1]
 
         # Return an array of the ra and dec.
-        return (ra, dec)
+        return float(ra), float(dec)
     
     # If the name is not in the astropy databases then raise an error.
     # (There will most likely be another error raised by the query
     # failing that says the same thing).
-    except:
-        raise SystemError("Name of source is in shorthand or not in an established database.")
+    except SystemError as err:
+        raise SystemError("Name of source is in shorthand or not in an established database. Error reported as: ",err)
 
     
 
