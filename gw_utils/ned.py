@@ -2,14 +2,13 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astroquery.ipac.ned import Ned
 import numpy as np
-
+import requests
 
 '''.
 
 Wrappers that call the NASA Extragalactic Database.
 
 '''
-
 
 def coord_converter(ra, dec): 
     '''.
@@ -126,6 +125,14 @@ def name(ra, dec, radius_tol = 0.01):
 
     # Check that the arugments are actually numerical, i.e. the ra and
     # dec passed to the function are in degrees.
+    NEDInstance = Ned() # Establish an instance of NED to change its parameters
+
+    # Change the timeout parameter of the NED instance to 150 seconds. Requires making a separate request.
+    NEDInstance._session.request = lambda *args, **kwargs: requests.Session().request(
+        *args,
+        timeout=150,
+        **kwargs
+)
     if isinstance(ra, (int, float)) and isinstance(dec, (int, float)):
         # Put coordinates into an array.
         coords = SkyCoord(ra=ra, dec=dec, unit=(u.deg, u.deg), frame='icrs')
@@ -133,7 +140,7 @@ def name(ra, dec, radius_tol = 0.01):
         # Query the NED database for objects within radius_tol
         # degrees, radially, of the chosen point (ra,dec), and creates
         # a table.
-        result_table = Ned.query_region(coords, radius=radius_tol*u.deg, equinox='J2000.0')
+        result_table = NEDInstance.query_region(coords, radius=radius_tol*u.deg, equinox='J2000.0',timeout=150)
 
         # Find object closest to the center of the region and drops
         # all other objects from the dataframe.
@@ -211,7 +218,8 @@ def name_resolver(name):
 
 
 
-def redshift(ra, dec, radius_tol = 0.01):
+def redshift(ra, dec, ned_name, radius_tol = 0.01):
+
     '''.
     
     Find the redshift associated with an J2000 ra and dec (in degrees)
@@ -239,6 +247,14 @@ def redshift(ra, dec, radius_tol = 0.01):
 
     '''
 
+    NEDInstance = Ned()
+
+    NEDInstance._session.request = lambda *args, **kwargs: requests.Session().request(
+        *args,
+        timeout=150,
+        **kwargs
+)
+
     # Check that the arugments are actually numerical, i.e. the ra and
     # dec passed to the function are in degrees.
     if isinstance(ra, (int, float)) and isinstance(dec, (int, float)):
@@ -248,14 +264,23 @@ def redshift(ra, dec, radius_tol = 0.01):
         # Query the NED database for objects within radius_tol
         # degrees, radially, of the chosen point (ra,dec), and creates
         # a table.
-        result_table = Ned.query_region(coords, radius=radius_tol*u.deg, equinox='J2000.0')
-
+        for attempts in range(3): # Try 3 times, in case of timeout or other issue that repetition will solve.
+            try:
+                result_table = NEDInstance.query_region(coords, radius=radius_tol*u.deg, equinox='J2000.0')
+            except:
+                print(f"NED query failed {attempts+1}/3, retrying...")
+                if attempts == 2:
+                    raise
+                continue
         # Find object closest to the center of the region and drops
         # all other objects from the dataframe.
-        result = result_table[result_table['Separation']== result_table['Separation'].min()]
-        
+        result = result_table[result_table['Separation'] == result_table['Separation'].min()]
         # Extracts redshift value from dataframe and return it.
         z = result[0]['Redshift'] 
+        z = float(z) # Convert to float. Will produce a warning if more than one redshift is found.
+        if np.isnan(z): # If the redshift couldn't be found, try to find it by name.
+            print("Coordinate search for redshift failed, attempting search by name.")
+            z = name_redshift(ned_name, NEDInstance)
         return z
     
     # If the arguments are not numerical, i.e. of hmsdms, then raise
@@ -263,4 +288,29 @@ def redshift(ra, dec, radius_tol = 0.01):
     else:
         raise RuntimeError("Arguments given are incorrect. Make sure ra and dec are in degrees.")
 
+def name_redshift(ned_name, NEDInstance):
 
+    '''
+    Backup function for redshift. If the coordinate search for redshift fails, this function will be called.
+
+    Inputs:
+        ned_name = NED name of the object
+        NEDInstance = NED Instance, from the redshift() function.
+    
+    Outputs:
+        z = redshift of the object
+    '''
+    for attempt in range(3):
+        try:
+            result = NEDInstance.query_object(ned_name)
+            z = result['Redshift'][0]
+            z = float(z)
+            if np.isnan(z):
+                print("Name search for redshift returned masked/NaN.")
+                raise
+            return z
+        except Exception as e:
+            print(f"NED name query failed {attempt+1}/3: {e}")
+    # This part of the code is only called if it fails 3 times.
+    print("NED name query failed 3 times.")
+    raise
