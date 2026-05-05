@@ -249,11 +249,15 @@ def redshift(ra, dec, ned_name, radius_tol = 0.01):
 
     NEDInstance = Ned()
 
-    NEDInstance._session.request = lambda *args, **kwargs: requests.Session().request(
-        *args,
-        timeout=150,
-        **kwargs
-)
+    session = NEDInstance._session
+
+    original_request = session.request
+
+    def request_with_timeout(*args, **kwargs):
+        kwargs["timeout"] = (30, 150)
+        return original_request(*args, **kwargs)
+
+    NEDInstance._session.request = request_with_timeout
 
     # Check that the arugments are actually numerical, i.e. the ra and
     # dec passed to the function are in degrees.
