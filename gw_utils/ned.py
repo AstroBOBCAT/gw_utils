@@ -1,13 +1,149 @@
+
+# General requirements
 from astropy import units as u
 from astropy.coordinates import SkyCoord
+from astroquery.simbad import Simbad
 from astroquery.ipac.ned import Ned
+from astropy.coordinates import name_resolve
 import numpy as np
 import requests
+
+# Handling NED server time-outs
+import socket
+from astroquery.ipac.ned import Conf as NedConf
+from astroquery.exceptions import RemoteServiceError
+
 '''.
 
 Wrappers that call the NASA Extragalactic Database.
 
+# Note: the code for the timeout exception handling was initially
+# written by Claude Sonnet 4.6, which produced a bunch of clunky code
+# with some odd decisions. It was subsequently line-by-line verified /
+# heavily changed and tested by Sarah.
+
 '''
+
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
+
+# Pause between query re-tries; avoid overloading.
+_RETRY_PAUSE_SECONDS = 10
+
+# Sequence of timeout values (seconds) to apply on successive attempts:
+#   attempt 1, 60 s  (first retry after an initial timeout, this is NED standard length)
+#   attempt 2, 120 s (second retry)
+#   attempt 3, 180 s (subsequent retries)
+_TIMEOUT_SEQUENCE = [60, 120, 180]
+
+
+def _is_timeout_exception(exc):
+    """.
+
+    Check if a timeout exception is returned.
+
+    Input: Exception.
+    Output: Boolean.
+    
+    """
+    return isinstance(exc, (
+        TimeoutError,                          # built-in, per astroquery API spec
+        requests.exceptions.ReadTimeout,       # requests library – most common in practice
+        requests.exceptions.ConnectTimeout,    # requests library – connection phase
+    ))
+
+# ---------------------------------------------------------------------------
+
+def ned_name(object_name):
+    """
+    Attempt to resolve *object_name* using NED.
+
+    Returns the preferred NED object name, or None if the object is not
+    found.  Raises RuntimeError on unrecoverable errors.
+
+    Parameters
+    ----------
+    object_name : str
+        Name as supplied by the user.
+
+    Returns
+    -------
+    str or None
+        The NED preferred object name, or None if the object is absent
+        from the NED database.
+
+    """
+
+    for i in range(len(_TIMEOUT_SEQUENCE)):
+        timeout_secs = _TIMEOUT_SEQUENCE[i]
+
+        # NED timeout is set globally through the Conf object.
+        NedConf.timeout = timeout_secs
+
+        # THIS IS ACTUALLY THE MAIN PART OF THE FUNCTION!!!!!
+        try:
+            result_table = Ned.query_object(object_name)
+
+        # ----------------------------------------------------------------
+        # Object not found in NED.
+        # ----------------------------------------------------------------
+        except RemoteServiceError as exc:
+            # NED raises RemoteServiceError when the name is unknown.
+            if "no object found" in str(exc).lower() or "not found" in str(exc).lower():
+                return None
+            # Unexpected RemoteServiceError
+            raise RuntimeError(
+                f"NED query for '{object_name}' returned a service error: {exc}"
+            ) from exc
+
+        except Exception as exc:
+            # ----------------------------------------------------------
+            # Timeout
+            # ----------------------------------------------------------
+            if _is_timeout_exception(exc):
+                
+                print(
+                    f"[NED] Timeout on attempt {i} "
+                    f"(timeout was {timeout_secs} s). "
+                )
+                # Retry if we still have attempts left!
+                if (i < len(_TIMEOUT_SEQUENCE)-1):
+                    print(f"Waiting {_RETRY_PAUSE_SECONDS} s before retrying\nwith timeout={new_timeout} s …")
+                    time.sleep(_RETRY_PAUSE_SECONDS)
+                    continue
+                # Die with timeout error if no attempts left.
+                else:
+                    print("That was the last try and it was unsuccessful. Goodbye.")
+                    raise RuntimeError(f"NED query for '{object_name}' failed with a timeout error after {len(_TIMEOUT_SEQUENCE)} attempts.")
+                        
+            # ----------------------------------------------------------
+            # Any other unexpected exception.
+            # ----------------------------------------------------------
+            raise RuntimeError(
+                f"NED query for '{object_name}' failed with an unexpected "
+                f"error: {exc}"
+            ) from exc
+
+        # ----------------------------------------------------------------
+        # Successful response: extract the preferred object name.
+        # ----------------------------------------------------------------
+        # This might be handled above but catch just in case. 
+        if result_table is None or len(result_table) == 0:
+            raise RuntimeError(
+                f"The object '{object_name}' could not be found in either SIMBAD or NED. "
+                "Check the object by hand and try again."
+            )
+
+        # NED's main source table uses the column "Object Name" for the
+        # preferred identifier of the object.
+        ned_name = str(result_table["Object Name"][0])
+        return ned_name
+
+
+# ---------------------------------------------------------------------------
+
+
 
 def clear_ned_cache():
     '''.
@@ -95,7 +231,6 @@ def coord_finder(name):
     try:
         # Search for the coordinates of the object given the name. 
         try:
-            print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
             coords = SkyCoord.from_name(name, parse = True).to_string('hmsdms').split()
         except:
             coords = SkyCoord.from_name(name, parse = False).to_string('hmsdms').split()
@@ -134,8 +269,10 @@ def sarahs_name(candidate_name):
                if NED could not identify the object.
 
     '''
+    
+    
 
-
+    
 #------------------------------------------------
 
 def name(ra, dec, radius_tol = 0.01):
