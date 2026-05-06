@@ -316,5 +316,4 @@ def name_redshift(ned_name, NEDInstance):
         except Exception as e:
             print(f"NED name query failed {attempt+1}/3: {e}")
     # This part of the code is only called if it fails 3 times.
-    print("NED name query failed 3 times.")
-    raise
+    raise SystemError("NED name query failed 3 times.")
