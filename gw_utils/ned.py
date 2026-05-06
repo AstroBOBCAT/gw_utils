@@ -3,7 +3,6 @@ from astropy.coordinates import SkyCoord
 from astroquery.ipac.ned import Ned
 import numpy as np
 import requests
-
 '''.
 
 Wrappers that call the NASA Extragalactic Database.
@@ -95,7 +94,11 @@ def coord_finder(name):
     # Try to find the name in the astropy databases.
     try:
         # Search for the coordinates of the object given the name. 
-        coords = SkyCoord.from_name(name, parse = True).to_string('hmsdms').split()
+        try:
+            print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+            coords = SkyCoord.from_name(name, parse = True).to_string('hmsdms').split()
+        except:
+            coords = SkyCoord.from_name(name, parse = False).to_string('hmsdms').split()
 
         # Assign the ra and dec variables.
         ra = coords[0]
