@@ -10,6 +10,24 @@ Wrappers that call the NASA Extragalactic Database.
 
 '''
 
+def clear_ned_cache():
+    '''.
+
+    Cache clear as suggested by
+    https://astroquery.readthedocs.io/en/latest/ipac/ned/ned.html#reference-api
+
+    Always call this function before running ingest. It will prevent
+    repeated failed queries or bad/out-of-date results if we've been
+    running for a long time.
+
+    '''
+
+    Ned.clear_cache()
+
+    return
+
+
+
 def coord_converter(ra, dec): 
     '''.
 
@@ -39,7 +57,7 @@ def coord_converter(ra, dec):
 
         # Split the ra and dec and return them.
         ra_deg, dec_deg = np.array([coords_arr.ra.degree, coords_arr.dec.degree]) 
-        return ra_deg, dec_deg
+        return float(ra_deg), float(dec_deg)
     # If something goes wrong in the above code block it is most
     # likely because the ra and dec passed to the function weren't
     # entered exactly correctly. Therefore, raise an error.
@@ -83,16 +101,39 @@ def coord_finder(name):
         ra = coords[0]
         dec = coords[1]
 
-        # Return an array of the ra and dec.
-        return (ra, dec)
+        # Return an array of the ra and dec. They are hms/dms strings.
+        return ra, dec
     
     # If the name is not in the astropy databases then raise an error.
     # (There will most likely be another error raised by the query
     # failing that says the same thing).
     except:
-        raise SystemError("Name of source is in shorthand or not in an established database.")
+        raise SystemError("Name of source is in shorthand or not in an established database. ")
+
+#------------------------------------------------
 
 
+def sarahs_name(candidate_name):
+    '''.
+
+    Query NED and then SIMBAD for the primary name associated with the
+    specified object.
+    
+    Will raise an error if NED times out for more than 5 minutes.
+    
+    Inputs:
+
+        name = name provided by user.
+
+    Outputs:
+
+        name = first name in list returned by NED OR main_id in SIMBAD
+               if NED could not identify the object.
+
+    '''
+
+
+#------------------------------------------------
 
 def name(ra, dec, radius_tol = 0.01):
     '''.
@@ -218,11 +259,18 @@ def name_resolver(name):
 
 
 
-def redshift(ra, dec, ned_name, radius_tol = 0.01):
+def redshift(ned_name, ra = None, dec = None, radius_tol = 0.01):
 
     '''.
     
-    Find the redshift associated with an J2000 ra and dec (in degrees)
+    Find the redshift associated with a NED source. If we are unable
+    to find a redshift, return an error.
+
+    Optionally, if an ra, dec, and radius_tolerance are provided,
+    return the redshift associated with the most nearby source to the
+    specified region.
+    
+    J2000 ra and dec (in degrees)
     with some search radius tolerance from the NED database. This
     function takes the ra and dec (in the units of degrees) and
     quieries the NED database for the redshift values associated with
@@ -234,16 +282,19 @@ def redshift(ra, dec, ned_name, radius_tol = 0.01):
     returned by the function.
 
     Inputs:
-        ra = J2000 right ascension, units = degrees
+        ned_name             = a NED-recognized source name
+    
+        ra[optional]         = J2000 right ascension, units = degrees
 
-        dec = J2000 declination, units = degrees
+        dec[optional]        = J2000 declination, units = degrees
 
-        radius_tol = tolerance of the search radius used in the query
-                     to the NED database, units = degrees, default = 0.01
+        radius_tol[optional] = tolerance of the search radius used in
+                               the query to the NED database, units =
+                               degrees, default = 0.01
     
     Outputs:
 
-        z = redshift of the object closest to the given ra and dec
+        z = redshift of the object
 
     '''
 
