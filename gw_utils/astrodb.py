@@ -270,10 +270,7 @@ def redshift(object_name):
 def name_resolver():
     '''.
 
-    Need to check what other parts of the code use all the old ned.py
-    functions. look for imports of gwutils ned or calc packages.
-
-    ALSO CAN WE MAKE AN INTERNAL "BOBCAT NAME" CHECKER FUNCTION???
+    CAN WE MAKE AN INTERNAL "BOBCAT NAME" CHECKER FUNCTION???
     LIKE MAYBE OUR OWN INTERNAL LIST OF MAIN AND PET NAMES BEFORE
     ASKING NED? --- something to consider for the future.
 
