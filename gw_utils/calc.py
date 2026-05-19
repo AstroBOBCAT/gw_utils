@@ -1,6 +1,7 @@
 import numpy as np 
 import math
 from astropy.coordinates import SkyCoord 
+from pandas import isnull
 
 
 """.
@@ -35,6 +36,7 @@ m1 and m2 values.
 """
 
 ##################
+
 def find_m1_m2(m1 = None, m2 = None, Mtot = None, q = None, Mc = None, mu = None):
     '''.
 
@@ -71,7 +73,26 @@ def find_m1_m2(m1 = None, m2 = None, Mtot = None, q = None, Mc = None, mu = None
              of the masses passed to function
 
     '''
-    
+    try:
+        m1 = 10**m1
+    except:
+        pass
+    try:
+        m2 = 10**m2
+    except:
+        pass
+    try:
+        Mtot = 10**Mtot
+    except:
+        pass
+    try:
+        Mc = 10**Mc
+    except:
+        pass
+    try:
+        mu = 10**mu
+    except:
+        pass
     # Check if m1 and m2 are actually passed to the function. If they are then we can skip the remaining 
     # code and just pass them back.
     if m1!=None and m2!=None:
@@ -180,8 +201,11 @@ def Mc_calc(m1,m2):
              the masses passed to function
 
     '''
-    
-    return (((m1*m2)**3)/(m1+m2))**(1/5)
+    m1 = 10**m1
+    m2 = 10**m2
+    Mc_lin = (((m1*m2)**3)/(m1+m2))**(1/5)
+    Mc = np.log10(Mc_lin)
+    return Mc
 
 
 
@@ -204,10 +228,12 @@ def Mtot_calc(m1,m2):
                the masses passed to function
 
     '''
-    
-    return m1+m2
+    m1 = 10**m1
+    m2 = 10**m2
+    Mtot_lin = m1+m2
+    Mtot = np.log10(Mtot_lin)
+    return Mtot
   
-
 def mu_calc(m1,m2):
     '''.
     
@@ -225,10 +251,14 @@ def mu_calc(m1,m2):
 
         mu = reduced mass of the system, units = same as the units of
              the masses passed to function
-
+    
     '''
     
-    return (m1*m2)/(m1+m2) 
+    m1 = 10**m1
+    m2 = 10**m2
+    mu_lin = (m1*m2)/(m1+m2)
+    mu = np.log10(mu_lin)
+    return mu
 
 
 
@@ -254,13 +284,17 @@ def q_calc(m1,m2):
 
     # Check to see if m1>m2, which is what we want to force so that q
     # remains between 0 and 1.
+    m1 = 10**m1
+    m2 = 10**m2
+
     if m1 > m2:
-        return m2/m1 
+        q = m2/m1
+        return q
     # If m2>m1 then we just change the ratio so that q is still
     # between 0 and 1.
     else:
-        return m1/m2
-
+        q = m1/m2
+        return q
 
 
 
@@ -288,6 +322,8 @@ def q_limit(Mc,Mtot):
         q = mass ratio of the system, units = N/A
 
     '''
+    Mc = 10**Mc
+    Mtot = 10**Mtot
 
     term1 = math.sqrt(
         ((Mtot**4) * ((Mc/Mtot)**(2/3)))
@@ -340,7 +376,7 @@ def q_limit(Mc,Mtot):
 # that used a consistent model.
 
 
-def mass_val_calc(m1 = None, m2 = None, Mtot = None, q = None, Mc = None, mu = None): #creating the function, reading the collection of inputs
+def mass_val_calc(m1 = None, m2 = None, Mtot = None, Mc = None, mu = None, q = None): #creating the function, reading the collection of inputs
     """.
 
     This is the BOBcat SMBHB mass value calculator! It will calculate
@@ -362,30 +398,31 @@ def mass_val_calc(m1 = None, m2 = None, Mtot = None, q = None, Mc = None, mu = N
     mu = Reduced Mass
 
     """
-    
+    mass_array = [m1, m2, Mtot, Mc, mu, q]
+
     none_counter = 0
 
+    if isnull(m1):
+        none_counter+=1
+    if isnull(m2):
+        none_counter+=1
+    if isnull(Mtot):
+        none_counter+=1
+    if isnull(q):
+        none_counter+=1
+    if isnull(Mc):
+        none_counter+=1
+    if isnull(mu):
+        none_counter+=1
+    
+    if none_counter > 5:
+        print("At least two of the inputs must be known to calculate the other values.")
+        return mass_array
+    
+    mass_array, updated_masses = update_masses(m1, m2, Mtot, Mc, mu, q)
 
-    if m1 == None:
-        none_counter+=1
-    if m2 == None:
-        none_counter+=1
-    if Mtot == None:
-        none_counter+=1
-    if q == None:
-        none_counter+=1
-    if Mc == None:
-        none_counter+=1
-    if mu == None:
-        none_counter+=1
 
-
-    mass_array, updated_masses = update_masses(m1, m2, Mtot, q, Mc, mu)
-
-    if none_counter != len(updated_masses):
-        raise RuntimeError("Something is wrong. Please check that you entered the correct numbers for each argument.")
-    else:
-        return mass_array 
+    return mass_array 
 
 
 
@@ -443,7 +480,7 @@ def update_m1(m1 = None, m2 = None, Mtot = None, q = None, Mc = None, mu = None,
     # If no m1 was passed to the function or the difference between the value passed and
     # the value calculated is greater than the tolerance, the calculated m1 value is the
     # the mass value used for m1.
-    if m1 == None or abs(m1 - m1_calced) >= tolerance:
+    if isnull(m1) or abs(m1 - m1_calced) >= tolerance:
         m1 = m1_calced
 
     # If none of the above criteria are met then the m1 value passed to the function
@@ -507,7 +544,7 @@ def update_m2(m1 = None, m2 = None, Mtot = None, q = None, Mc = None, mu = None,
     # the value passed and the value calculated is greater than the
     # tolerance, the calculated m2 value is the the mass value used
     # for m2.
-    if m2 == None or abs(m2 - m2_calced) >= tolerance:
+    if isnull(m2) or abs(m2 - m2_calced) >= tolerance:
         m2 = m2_calced
 
     # If none of the above criteria are met then the m2 value passed
@@ -559,7 +596,7 @@ def update_Mc(m1, m2, Mc = None, tolerance = 1e5):
     # between the value passed and the value calculated is greater
     # than the tolerance, the calculated chirp mass value is the the
     # mass value used for chirp mass.
-    if Mc == None or abs(Mc - Mc_calced) >= tolerance:
+    if isnull(Mc) or abs(Mc - Mc_calced) >= tolerance:
         Mc = Mc_calced
 
     # If none of the above criteria are met then the chirp mass value
@@ -611,7 +648,7 @@ def update_Mtot(m1, m2, Mtot = None, tolerance = 1e5):
     # between the value passed and the value calculated is greater
     # than the tolerance, the calculated total mass value is the the
     # mass value used for total mass.
-    if Mtot == None or abs(Mtot - Mtot_calced) >= tolerance:
+    if isnull(Mtot) or abs(Mtot - Mtot_calced) >= tolerance:
         Mtot = Mtot_calced
 
     # If none of the above criteria are met then the total mass value
@@ -663,7 +700,7 @@ def update_mu(m1, m2, mu = None, tolerance = 1e5):
     # between the value passed and the value calculated is greater
     # than the tolerance, the calculated reduced mass value is the the
     # mass value used for reduced mass.
-    if mu == None or abs(mu - mu_calced) >= tolerance:
+    if isnull(mu) or abs(mu - mu_calced) >= tolerance:
         mu = mu_calced
 
     # If none of the above criteria are met then the reduced mass
@@ -714,7 +751,7 @@ def update_q(m1, m2, q = None, tolerance = 0.01):
     # between the value passed and the value calculated is greater
     # than the tolerance, the calculated mass ratio value is the the
     # value used for mass ratio.
-    if q == None or abs(q - q_calced) >= tolerance:
+    if isnull(q) or abs(q - q_calced) >= tolerance:
         q = q_calced
 
     # If none of the above criteria are met then the mass ratio value
@@ -726,7 +763,7 @@ def update_q(m1, m2, q = None, tolerance = 0.01):
 
 
 
-def update_masses(m1, m2, Mtot, q, Mc, mu):
+def update_masses(m1, m2, Mtot, Mc, mu, q):
     '''.
 
     Update all six of the mass values used to fully describe a binary
@@ -827,7 +864,7 @@ def update_masses(m1, m2, Mtot, q, Mc, mu):
 
     # Return all the updated mass values and the array with the names
     # of the values that have been updated.
-    return ([(m1_updated,m2_updated,Mtot_updated,q_updated,Mc_updated,mu_updated), updated_masses])
+    return ([m1_updated,m2_updated,Mtot_updated,Mc_updated,mu_updated,q_updated], updated_masses)
 
 
 
@@ -899,20 +936,23 @@ def freq_calc(T = None, f_orb = None, f_grav = None):
     if not isinstance(T, (int, float, type(None))) and not isinstance(f_orb, (int, float, type(None))) and not isinstance(f_grav, (int, float, type(None))):
         raise TypeError("Arguments must be numerical or empty.")
         
-    if T!=None:
+    if not isnull(T) and not isnull(f_orb) and f_grav != None:
+        return [f_orb, T, f_grav]
+    
+    if not isnull(T):
         #change T into seconds
         T_sec = T*31536000
-        if f_orb == None:
+        if isnull(f_orb):
             f_orb = (2*np.pi)/T_sec
-        if f_grav == None:
+        if isnull(f_grav):
             f_grav = 2*f_orb
-    elif f_orb!=None:
+    elif not isnull(f_orb):
         #perform calculations using f_orb
         T = (2*np.pi)/f_orb #in seconds
         T = T/31536000 #in years
         if f_grav == None:
             f_grav = 2*f_orb
-    elif f_grav!=None:
+    elif not f_grav == None:
         #perform calculations using f_grav
         T_sec = (4*np.pi)/f_grav #in seconds
         T = T_sec/31536000 #in years
@@ -927,7 +967,7 @@ def freq_calc(T = None, f_orb = None, f_grav = None):
    
     # From here, frequency values can be reinserted into the BOBcat
     # database.
-    return T, f_orb, f_grav
+    return [f_orb, T, f_grav]
 
 
 
