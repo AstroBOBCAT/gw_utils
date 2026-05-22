@@ -1,4 +1,3 @@
-
 # General requirements
 from astropy import units as u
 from astropy.coordinates import SkyCoord
@@ -53,7 +52,8 @@ def ned_timeout(func, *args, **kwargs):
     """.
 
     Wrapper to handle potential time-out issues with NED for any query
-    type.
+    type. *** UNFORTUNATELY THE INCREASING TIMEOUT DOES NOT WORK
+    AS-IS. NEEDS FURTHER INVESTIGATION. ***
 
     In principle, a similar format could be used for other systems'
     queries as needed.
@@ -228,11 +228,15 @@ def ned_name_from_position(ra, dec, radius = 0.01):
 
     '''
 
+    # If search radius too big, it will almost certainly result in a timeout.
+    if (radius >= 1):
+        raise RuntimeError(f"ERROR: Your requested NED search radius {radius} deg is >=1 deg. This will certainly end in a timeout. Please try again with a smaller radius.")
+
     # Put coordinates into an array.
     coords = SkyCoord(ra=ra, dec=dec, unit=(u.deg, u.deg), frame='icrs')
 
     # Query NED
-    result_table = ned_timeout(Ned.query_region,coords,radius=radius*u.deg, equinox='J2000.0')
+    result_table = ned_timeout(Ned.query_region,coords,radius = radius * u.deg, equinox = 'J2000.0')
 
     # Find closest object, drop other objects.
     result = result_table[result_table['Separation']== result_table['Separation'].min()]
@@ -258,7 +262,6 @@ def redshift(object_name):
 
     z = float(result_table['Redshift'][0])
 
-    # Jordan, do we want an error here or simply a returned statement?
     if np.isnan(z):
         raise RuntimeError(f"ERROR: Redshift not available in NED for known object {object_name}.")
 
