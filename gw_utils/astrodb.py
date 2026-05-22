@@ -115,6 +115,10 @@ def ned_timeout(func, *args, **kwargs):
             raise RuntimeError(
                 f"NED query failed with an unexpected error: {exc}"
             ) from exc
+
+        # Indicate success if a timeout occurred.
+        if i > 0:
+            print("Success!")
         return results
 
 
