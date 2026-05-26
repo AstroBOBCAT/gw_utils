@@ -1011,7 +1011,7 @@ def update_Tforb(T = None, f_orb = None, f_grav = None, tolerance = 1e-5):
 #  COSMOLOGY FUNCTIONS
 ###########################
 
-def cosmo_calc(z,a=None,b=None,c=None): #Inputs are: z, H0, WM, WV
+def cosmo_calc(z,a=70,b=0.3,c=0.000085): #Inputs are: z, H0, WM, WV
     """.
 
     This is the BOBcat cosmological distance calculator. It was built
@@ -1038,24 +1038,22 @@ def cosmo_calc(z,a=None,b=None,c=None): #Inputs are: z, H0, WM, WV
     """
     #We first want to assume the benchmark model when not provided
     #cosmological parameters
-    if a==None:                          
-        H0 = 70                         # Hubble constant
-    else:
-        H0 = a                          # Hubble constant
-    if b==None and c==None:
-        WM = 0.3                        # Omega(matter)
-        WV = 1.0 - WM - 0.4165/(H0*H0)  # Omega(vacuum) or lambda
-    elif b!=None and c==None:
-        WM = b                          # Omega(matter)
-        WV = 1.0 - WM - 0.4165/(H0*H0)  # Omega(vacuum) or lambda
-    elif b==None and c!=None:
-        WM = 1.0 - c - 0.4165/(H0*H0)   # Omega(matter)
-        WV = c                          # Omega(vacuum) or lambda
-    else:
-        WM = b                          # Omega(matter)
-        WV = c                          # Omega(vacuum) or lambda
+#    if b==None and c==None:
+#        WM = 0.3                        # Omega(matter)
+#        WV = 1.0 - WM - 0.4165/(H0*H0)  # Omega(vacuum) or lambda
+#    elif b!=None and c==None:
+#        WM = b                          # Omega(matter)
+#        WV = 1.0 - WM - 0.4165/(H0*H0)  # Omega(vacuum) or lambda
+#    elif b==None and c!=None:
+#        WM = 1.0 - c - 0.4165/(H0*H0)   # Omega(matter)
+#        WV = c                          # Omega(vacuum) or lambda
+#    else:
+    H0 = a
+    WM = b                          # Omega(matter)
+    WV = c                          # Omega(vacuum) or lambda
         
     #Next, initialize constants
+    
     WR = 0.        # Omega(radiation)
     WK = 0.        # Omega curvaturve = 1-Omega(total)
     c = 299792.458 # velocity of light in km/sec
@@ -1079,7 +1077,7 @@ def cosmo_calc(z,a=None,b=None,c=None): #Inputs are: z, H0, WM, WV
     #Perform integral over a=1/(1+z) from az to 1 in n steps, midpoint rule
     for i in range(n):
         a = az+(1-az)*(i+0.5)/n
-        adot = sqrt(WK+(WM/a)+(WR/(a*a))+(WV*a*a))
+        adot = np.sqrt(WK+(WM/a)+(WR/(a*a))+(WV*a*a))
         #finding comoving radial distance
         DCMR = DCMR + 1./(a*adot)
 
@@ -1088,12 +1086,12 @@ def cosmo_calc(z,a=None,b=None,c=None): #Inputs are: z, H0, WM, WV
     
     #Calculate the tangential comoving distance
     ratio = 1.00
-    x = sqrt(abs(WK))*DCMR
+    x = np.sqrt(abs(WK))*DCMR
     if x > 0.1:
         if WK > 0:
-            ratio =  0.5*(exp(x)-exp(-x))/x 
+            ratio =  0.5*(np.exp(x)-np.exp(-x))/x 
         else:
-            ratio = sin(x)/x
+            ratio = np.sin(x)/x
     else:
         y = x*x
         if WK < 0: 
@@ -1114,7 +1112,7 @@ def cosmo_calc(z,a=None,b=None,c=None): #Inputs are: z, H0, WM, WV
     # Returns an array of redshift, comoving radial distance (in Mpc),
     # luminosity distance (in Mpc), and the angular diameter distance
     # scale (in kpc/") From this, we can reinsert distance values into
-    # the BOBcat database for use in calculating strain
-    return DL_Mpc, DCMR_Mpc, kpc_DA
+    # the BOBcat database for use in calculating 
+    return (DL_Mpc, DCMR_Mpc, kpc_DA)
 
 
