@@ -1011,7 +1011,7 @@ def update_Tforb(T = None, f_orb = None, f_grav = None, tolerance = 1e-5):
 #  COSMOLOGY FUNCTIONS
 ###########################
 
-def cosmo_calc(z,a=70,b=0.3,c=0.000085): #Inputs are: z, H0, WM, WV
+def cosmo_calc(z,H0=70,WM=0.3,WV=0.000085): #Inputs are: z, H0, WM, WV
     """.
 
     This is the BOBcat cosmological distance calculator. It was built
@@ -1048,9 +1048,9 @@ def cosmo_calc(z,a=70,b=0.3,c=0.000085): #Inputs are: z, H0, WM, WV
 #        WM = 1.0 - c - 0.4165/(H0*H0)   # Omega(matter)
 #        WV = c                          # Omega(vacuum) or lambda
 #    else:
-    H0 = a
-    WM = b                          # Omega(matter)
-    WV = c                          # Omega(vacuum) or lambda
+#    H0 = a
+#    WM = b                          # Omega(matter)
+#    WV = c                          # Omega(vacuum) or lambda
         
     #Next, initialize constants
     
