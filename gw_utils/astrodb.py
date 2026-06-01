@@ -3,13 +3,17 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astroquery.simbad import Simbad
 from astroquery.ipac.ned import Ned
+from astroquery.simbad import Simbad
 from astropy.coordinates import name_resolve
+from astropy.table import Table
 import numpy as np
 import requests
 
 # Handling NED server time-outs
 import time
 import socket
+from logging import warning
+from logging import info
 from astroquery.ipac.ned import Conf as NedConf
 from astroquery.exceptions import RemoteServiceError
 
@@ -94,7 +98,7 @@ def ned_timeout(func, *args, **kwargs):
         except Exception as exc:
             if _is_timeout_exception(exc):
                 print(
-                    f"[NED] Timeout on attempt {i} "
+                    f"[NED] Timeout on attempt {i+1} "
                     f"(timeout was {timeout_secs} s)."
                 )
                 if i < len(TIMEOUT_SEQUENCE) - 1:
@@ -263,13 +267,34 @@ def redshift(object_name):
     '''
 
     result_table = ned_timeout(Ned.query_object, object_name)
-
-    z = float(result_table['Redshift'][0])
+    if len(result_table) > 0:
+        z = float(result_table['Redshift'][0])
+    else:
+        z = np.nan
 
     if np.isnan(z):
-        raise RuntimeError(f"ERROR: Redshift not available in NED for known object {object_name}.")
+        warning(f"Redshift not available in NED for known object {object_name}. Expanding search to alternate names in SIMBAD.")
+        try:
+            alt_names = Simbad.query_objectids(object_name) # Get alternative names from SIMBAD
+        except Exception as e:
+            warning(f"Failed to query SIMBAD for object {object_name}: {e}")
+        for name in alt_names:
+            try:
+                z = np.nan
+                result_table = ned_timeout(Ned.query_object, name) # Iterate through the list of alternate names to see if any of them are listed incorrectly as separate objects in NED.
+                if len(result_table) > 0:
+                    z = float(result_table['Redshift'][0])
+                    info(f"Redshift found for object {object_name} with alternate name {name}: {z}")
+                    return z, name[0]
+                else:
+                    warning(f"No redshift found for object {object_name} with alternate name {name}")
+            except Exception as e:
+                warning(f"Failed to query NED for object {object_name} with alternate name {name}: {e}")
+        if np.isnan(z):
+            raise RuntimeError(f"Redshift not available in NED for object {object_name} or any of its alternate names.")
 
-    return z
+
+    return z, False
 
 
 
