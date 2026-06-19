@@ -12,18 +12,21 @@ authors = [ { name="Jessica Sydnor", email="js0311@mix.wvu.edu"},
 	    ]
 description = "BOBcat source data, ingestion, and utilities codes."
 readme = "README.md"
-requires-python = ">3.7"
+requires-python = ">3.14"
 classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
 	     "astropy",
-	     "Astroquery",
+	     "astroquery",
 	     "healpy",
 	     "numpy",
-	     "pandas"
+	     "matplotlib",
+	     "healpy",
+	     "pandas",
+	     "requests"
 ]
 
 [project.urls]
 "Homepage" = "http://sarahspolaor.faculty.wvu.edu/"
-"Issues" = "https://github.com/jessydno/BOBcat/issues"
+"Issues" = "https://github.com/AstroBOBCAT/gw_utils/issues"
