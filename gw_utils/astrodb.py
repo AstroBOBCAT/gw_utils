@@ -296,16 +296,14 @@ def redshift(object_name):
 
     return z, False
 
-
-
-
-def name_resolver():
-    '''.
-
-    CAN WE MAKE AN INTERNAL "BOBCAT NAME" CHECKER FUNCTION???
-    LIKE MAYBE OUR OWN INTERNAL LIST OF MAIN AND PET NAMES BEFORE
-    ASKING NED? --- something to consider for the future.
-
-    '''
-
-#------------------------------------------------
+def get_bibliography(paper_link):
+    """
+    Get bibliography entry for a paper link.
+    
+    Inputs:
+        paper_link: URL of the paper
+        
+    Outputs:
+        bibliography: Bibliography entry for the paper
+    """
+    pass
